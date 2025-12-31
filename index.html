@@ -3,204 +3,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gastos HTM</title>
+<title>Gastos Personales</title>
 
 <style>
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont;
-  background:#111;
-  color:#eee;
+  background:#0f0f12;
+  color:#fff;
 }
+
 header{
   padding:16px;
   font-size:20px;
   font-weight:600;
   text-align:center;
+  background:#121216;
   border-bottom:1px solid #222;
 }
-.container{
-  padding:12px;
-  max-width:500px;
-  margin:auto;
+
+#list{
+  padding:14px;
+  padding-bottom:140px;
 }
-.list{
-  margin-bottom:90px;
-}
+
 .row{
-  display:grid;
-  grid-template-columns:90px 1fr 90px 30px;
-  gap:8px;
-  padding:10px 0;
-  border-bottom:1px solid #222;
-  align-items:center;
-}
-.row .amount.in{color:#2ecc71}
-.row .amount.out{color:#e74c3c}
-.row button{
-  background:none;
-  border:none;
-  color:#777;
-  font-size:18px;
-}
-.fab{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  width:56px;
-  height:56px;
-  border-radius:50%;
-  background:#007aff;
-  color:white;
-  font-size:32px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:flex;
-  align-items:end;
-}
-.sheet{
-  background:#1c1c1e;
-  width:100%;
-  padding:16px;
-  border-radius:20px 20px 0 0;
-}
-input,select{
-  width:100%;
-  padding:14px;
-  margin-bottom:10px;
+  background:#1a1a1f;
   border-radius:12px;
-  border:none;
-  background:#2c2c2e;
-  color:white;
-  font-size:16px;
+  padding:12px;
+  margin-bottom:8px;
+  display:grid;
+  grid-template-columns:90px 1fr auto auto;
+  gap:8px;
+  align-items:center;
 }
-button.save{
-  width:100%;
-  padding:14px;
-  background:#007aff;
-  color:white;
-  border:none;
-  border-radius:14px;
-  font-size:17px;
+
+.row .date{font-size:13px;color:#aaa}
+.row .desc{font-size:14px}
+.row .amount{font-weight:600}
+.row .amount.in{color:#4cd964}
+.row .amount.out{color:#ff453a}
+
+.trash{
+  font-size:18px;
+  cursor:pointer;
+  opacity:.8;
 }
-.footer{
+
+.bottom-bar{
   position:fixed;
   bottom:0;
   left:0;
   right:0;
-  background:#111;
+  background:#121216;
   border-top:1px solid #222;
+  padding:10px;
   display:flex;
+  gap:10px;
 }
-.footer button{
+
+.bottom-bar button{
   flex:1;
-  padding:14px;
-  background:none;
+  background:#1f1f25;
+  color:#fff;
   border:none;
-  color:#007aff;
-  font-size:15px;
+  border-radius:12px;
+  padding:12px;
+  font-size:14px;
 }
-.hidden{display:none}
+
+.plus{
+  position:fixed;
+  bottom:72px; /* 👈 ya no lo tapan */
+  right:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#0a84ff;
+  color:white;
+  font-size:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:flex;
+  align-items:flex-end;
+}
+
+.sheet{
+  background:#1a1a1f;
+  width:100%;
+  border-radius:20px 20px 0 0;
+  padding:20px;
+}
+
+input,select{
+  width:100%;
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:10px;
+  font-size:16px;
+}
+
+.save{
+  background:#0a84ff;
+  border:none;
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  color:white;
+  font-size:18px;
+}
 </style>
 </head>
 
 <body>
 
-<header>Gastos HTM</header>
+<header>Gastos personales</header>
 
-<div class="container">
-  <div id="list" class="list"></div>
+<div id="list"></div>
+
+<div class="plus" onclick="openModal()">＋</div>
+
+<div class="bottom-bar">
+  <button onclick="backup()">Respaldo</button>
+  <button onclick="exportCSV()">Exportar</button>
 </div>
 
-<div class="fab" onclick="openModal()">＋</div>
-
-<div id="modal" class="modal hidden" onclick="closeModal(event)">
+<div id="modal" class="modal" hidden onclick="closeModal(event)">
   <div class="sheet">
     <input id="date" type="date">
     <input id="desc" placeholder="Descripción">
     <input id="amount" type="number" placeholder="Monto">
     <select id="type">
-      <option value="out">Egreso</option>
       <option value="in">Ingreso</option>
+      <option value="out">Egreso</option>
     </select>
     <button class="save" onclick="save()">Guardar</button>
   </div>
 </div>
 
-<div class="footer">
-  <button onclick="exportCSV()">Exportar</button>
-  <button onclick="backup()">Respaldo</button>
-</div>
-
 <script>
-let data = JSON.parse(localStorage.getItem("htm_gastos")) || [];
+let data = JSON.parse(localStorage.getItem("gastos")) || [];
 
 const list = document.getElementById("list");
 const modal = document.getElementById("modal");
-const date = document.getElementById("date");
-const desc = document.getElementById("desc");
-const amount = document.getElementById("amount");
-const type = document.getElementById("type");
 
 function saveData(){
-  localStorage.setItem("htm_gastos", JSON.stringify(data));
+  localStorage.setItem("gastos", JSON.stringify(data));
 }
 
 function formatDate(d){
-  const f=new Date(d);
-  return f.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"2-digit"});
+  const m=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const dt=new Date(d);
+  return `${dt.getDate()}/${m[dt.getMonth()]}/${dt.getFullYear().toString().slice(2)}`;
 }
 
-function formatMoney(n){
+function money(n){
   return n.toLocaleString("es-MX",{minimumFractionDigits:2});
 }
 
 function render(){
   list.innerHTML="";
   data.forEach((m,i)=>{
-    const row=document.createElement("div");
-    row.className="row";
-    row.innerHTML=`
-      <div>${formatDate(m.date)}</div>
-      <div>${m.desc}</div>
-      <div class="amount ${m.type}">
-        ${m.type==="in"?"+":"-"}$${formatMoney(m.amount)}
-      </div>
-      <button onclick="remove(${i})">🗑</button>
+    const d=document.createElement("div");
+    d.className="row";
+    d.innerHTML=`
+      <div class="date">${formatDate(m.date)}</div>
+      <div class="desc">${m.desc}</div>
+      <div class="amount ${m.type}">$${money(m.amount)}</div>
+      <div class="trash" onclick="del(${i})">🗑️</div>
     `;
-    list.appendChild(row);
+    list.appendChild(d);
   });
 }
 
 function openModal(){
-  modal.classList.remove("hidden");
+  modal.hidden=false;
 }
 
 function closeModal(e){
-  if(e.target===modal) modal.classList.add("hidden");
+  if(e.target===modal) modal.hidden=true;
 }
 
 function save(){
-  if(!date.value || !amount.value) return alert("Fecha y monto requeridos");
-  data.unshift({
-    date:date.value,
-    desc:desc.value||"",
-    amount:+amount.value,
-    type:type.value
-  });
-  date.value=desc.value=amount.value="";
-  modal.classList.add("hidden");
+  const date=document.getElementById("date").value;
+  const desc=document.getElementById("desc").value;
+  const amount=document.getElementById("amount").value;
+  const type=document.getElementById("type").value;
+
+  if(!date || !amount) return alert("Falta información");
+
+  data.unshift({date,desc,amount:+amount,type});
   saveData();
+  modal.hidden=true;
+  desc.value=amount.value="";
   render();
 }
 
-function remove(i){
+function del(i){
   if(confirm("¿Eliminar movimiento?")){
     data.splice(i,1);
     saveData();
@@ -213,17 +223,18 @@ function exportCSV(){
   data.forEach(m=>{
     csv+=`${formatDate(m.date)},${m.desc},${m.amount},${m.type}\n`;
   });
-  download(csv,"gastos.csv");
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="gastos.csv";
+  a.click();
 }
 
 function backup(){
-  download(JSON.stringify(data),"respaldo_gastos.json");
-}
-
-function download(content,name){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([content]));
-  a.download=name;
+  a.href=URL.createObjectURL(blob);
+  a.download="respaldo_gastos.json";
   a.click();
 }
 
