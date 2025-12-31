@@ -3,49 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gastos</title>
+<title>Gastos HTM</title>
 
 <style>
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont;
-  background:#0f0f0f;
-  color:#fff;
+  background:#111;
+  color:#eee;
 }
-
 header{
   padding:16px;
-  font-size:22px;
+  font-size:20px;
   font-weight:600;
   text-align:center;
   border-bottom:1px solid #222;
 }
-
-#list{
+.container{
   padding:12px;
-  padding-bottom:120px;
+  max-width:500px;
+  margin:auto;
 }
-
+.list{
+  margin-bottom:90px;
+}
 .row{
   display:grid;
-  grid-template-columns:80px 1fr 90px 30px;
+  grid-template-columns:90px 1fr 90px 30px;
   gap:8px;
+  padding:10px 0;
+  border-bottom:1px solid #222;
   align-items:center;
-  background:#1c1c1e;
-  padding:12px;
-  border-radius:12px;
-  margin-bottom:8px;
-  font-size:14px;
 }
-
-.amount.in{color:#30d158}
-.amount.out{color:#ff453a}
-
-.trash{
-  cursor:pointer;
-  opacity:.7;
+.row .amount.in{color:#2ecc71}
+.row .amount.out{color:#e74c3c}
+.row button{
+  background:none;
+  border:none;
+  color:#777;
+  font-size:18px;
 }
-
 .fab{
   position:fixed;
   bottom:20px;
@@ -53,160 +50,160 @@ header{
   width:56px;
   height:56px;
   border-radius:50%;
-  background:#0a84ff;
+  background:#007aff;
   color:white;
   font-size:32px;
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:10;
 }
-
-.actions{
-  position:fixed;
-  bottom:20px;
-  left:20px;
-  display:flex;
-  gap:10px;
-}
-
-.actions button{
-  background:#1c1c1e;
-  color:white;
-  border:none;
-  padding:10px 14px;
-  border-radius:10px;
-  font-size:14px;
-}
-
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.6);
   display:flex;
-  align-items:flex-end;
+  align-items:end;
 }
-
 .sheet{
   background:#1c1c1e;
   width:100%;
   padding:16px;
   border-radius:20px 20px 0 0;
 }
-
 input,select{
   width:100%;
   padding:14px;
   margin-bottom:10px;
-  border-radius:10px;
+  border-radius:12px;
   border:none;
   background:#2c2c2e;
   color:white;
   font-size:16px;
 }
-
 button.save{
   width:100%;
   padding:14px;
-  border-radius:12px;
-  background:#0a84ff;
+  background:#007aff;
   color:white;
   border:none;
-  font-size:18px;
+  border-radius:14px;
+  font-size:17px;
 }
+.footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#111;
+  border-top:1px solid #222;
+  display:flex;
+}
+.footer button{
+  flex:1;
+  padding:14px;
+  background:none;
+  border:none;
+  color:#007aff;
+  font-size:15px;
+}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 
-<header>Mis Gastos</header>
+<header>Gastos HTM</header>
 
-<div id="list"></div>
+<div class="container">
+  <div id="list" class="list"></div>
+</div>
 
 <div class="fab" onclick="openModal()">＋</div>
 
-<div class="actions">
-  <button onclick="exportCSV()">Exportar</button>
-  <button onclick="backup()">Respaldo</button>
-</div>
-
-<div id="modal" class="modal" hidden onclick="closeModal(event)">
+<div id="modal" class="modal hidden" onclick="closeModal(event)">
   <div class="sheet">
     <input id="date" type="date">
-    <input id="amount" type="number" placeholder="Monto">
     <input id="desc" placeholder="Descripción">
+    <input id="amount" type="number" placeholder="Monto">
     <select id="type">
-      <option value="in">Ingreso</option>
       <option value="out">Egreso</option>
+      <option value="in">Ingreso</option>
     </select>
     <button class="save" onclick="save()">Guardar</button>
   </div>
 </div>
 
+<div class="footer">
+  <button onclick="exportCSV()">Exportar</button>
+  <button onclick="backup()">Respaldo</button>
+</div>
+
 <script>
-let data = JSON.parse(localStorage.getItem("gastos")) || [];
+let data = JSON.parse(localStorage.getItem("htm_gastos")) || [];
 
 const list = document.getElementById("list");
 const modal = document.getElementById("modal");
 const date = document.getElementById("date");
-const amount = document.getElementById("amount");
 const desc = document.getElementById("desc");
+const amount = document.getElementById("amount");
 const type = document.getElementById("type");
 
+function saveData(){
+  localStorage.setItem("htm_gastos", JSON.stringify(data));
+}
+
 function formatDate(d){
-  const months=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
-  const dt=new Date(d);
-  return `${dt.getDate()}/${months[dt.getMonth()]}/${dt.getFullYear().toString().slice(-2)}`;
+  const f=new Date(d);
+  return f.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"2-digit"});
 }
 
 function formatMoney(n){
-  return n.toLocaleString("es-MX",{minimumFractionDigits:0});
+  return n.toLocaleString("es-MX",{minimumFractionDigits:2});
 }
 
 function render(){
   list.innerHTML="";
   data.forEach((m,i)=>{
-    const r=document.createElement("div");
-    r.className="row";
-    r.innerHTML=`
+    const row=document.createElement("div");
+    row.className="row";
+    row.innerHTML=`
       <div>${formatDate(m.date)}</div>
       <div>${m.desc}</div>
       <div class="amount ${m.type}">
         ${m.type==="in"?"+":"-"}$${formatMoney(m.amount)}
       </div>
-      <div class="trash" onclick="del(${i})">🗑</div>
+      <button onclick="remove(${i})">🗑</button>
     `;
-    list.appendChild(r);
+    list.appendChild(row);
   });
 }
 
 function openModal(){
-  modal.hidden=false;
-  date.value=new Date().toISOString().split("T")[0];
+  modal.classList.remove("hidden");
 }
 
 function closeModal(e){
-  if(e.target===modal) modal.hidden=true;
+  if(e.target===modal) modal.classList.add("hidden");
 }
 
 function save(){
-  if(!amount.value || !date.value) return alert("Faltan datos");
+  if(!date.value || !amount.value) return alert("Fecha y monto requeridos");
   data.unshift({
     date:date.value,
-    amount:+amount.value,
     desc:desc.value||"",
+    amount:+amount.value,
     type:type.value
   });
-  localStorage.setItem("gastos",JSON.stringify(data));
-  modal.hidden=true;
-  amount.value=desc.value="";
+  date.value=desc.value=amount.value="";
+  modal.classList.add("hidden");
+  saveData();
   render();
 }
 
-function del(i){
+function remove(i){
   if(confirm("¿Eliminar movimiento?")){
     data.splice(i,1);
-    localStorage.setItem("gastos",JSON.stringify(data));
+    saveData();
     render();
   }
 }
@@ -216,15 +213,18 @@ function exportCSV(){
   data.forEach(m=>{
     csv+=`${formatDate(m.date)},${m.desc},${m.amount},${m.type}\n`;
   });
-  const blob=new Blob([csv],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="gastos.csv";
-  a.click();
+  download(csv,"gastos.csv");
 }
 
 function backup(){
-  alert(JSON.stringify(data));
+  download(JSON.stringify(data),"respaldo_gastos.json");
+}
+
+function download(content,name){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content]));
+  a.download=name;
+  a.click();
 }
 
 render();
