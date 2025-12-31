@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gastos personales</title>
+
+<style>
+body{
+  margin:0;
+  background:#0f0f12;
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+header{
+  padding:16px;
+  font-size:20px;
+  font-weight:600;
+}
+.container{
+  padding:12px;
+}
+.row{
+  display:grid;
+  grid-template-columns: 80px 1fr 90px 40px;
+  gap:6px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.row span{
+  font-size:14px;
+}
+.amount.in{color:#4cd964}
+.amount.out{color:#ff453a}
+input,select{
+  background:#1c1c1e;
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:10px;
+  font-size:14px;
+}
+button{
+  background:#1c1c1e;
+  color:white;
+  border:none;
+  border-radius:10px;
+  padding:12px;
+}
+.add{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:#0a84ff;
+  font-size:30px;
+}
+.total{
+  padding:16px;
+  font-size:22px;
+  font-weight:600;
+  text-align:center;
+}
+.tools{
+  display:flex;
+  gap:8px;
+  padding:12px;
+}
+.tools button{
+  flex:1;
+}
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:flex;
+  align-items:flex-end;
+}
+.sheet{
+  background:#1c1c1e;
+  width:100%;
+  border-radius:18px 18px 0 0;
+  padding:16px;
+}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<header>Mis gastos</header>
+
+<div class="container" id="list"></div>
+
+<div class="total" id="total">$0</div>
+
+<div class="tools">
+  <button onclick="exportExcel()">Exportar Excel</button>
+  <button onclick="backup()">Respaldo</button>
+</div>
+
+<button class="add" onclick="openModal()">＋</button>
+
+<div id="modal" class="modal hidden" onclick="closeModal(event)">
+  <div class="sheet">
+    <input id="date" placeholder="12/dic/25">
+    <input id="desc" placeholder="Descripción">
+    <input id="amount" type="number" placeholder="Monto">
+    <select id="type">
+      <option value="in">Ingreso</option>
+      <option value="out">Egreso</option>
+    </select>
+    <button style="width:100%;margin-top:10px" onclick="save()">Guardar</button>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("gastos")) || [];
+
+function format(n){
+  return n.toLocaleString("es-MX",{minimumFractionDigits:0});
+}
+
+function render(){
+  const list=document.getElementById("list");
+  list.innerHTML="";
+  let total=0;
+
+  data.forEach((m,i)=>{
+    total += m.type==="in"?m.amount:-m.amount;
+
+    const d=document.createElement("div");
+    d.className="row";
+    d.innerHTML=`
+      <span>${m.date}</span>
+      <span>${m.desc}</span>
+      <span class="amount ${m.type}">
+        ${m.type==="in"?"+":"-"}$${format(m.amount)}
+      </span>
+      <button onclick="del(${i})">🗑</button>
+    `;
+    list.appendChild(d);
+  });
+
+  document.getElementById("total").innerText="$"+format(total);
+  localStorage.setItem("gastos",JSON.stringify(data));
+}
+
+function openModal(){
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal(e){
+  if(e.target.id==="modal")
+    e.target.classList.add("hidden");
+}
+
+function save(){
+  const date=document.getElementById("date").value;
+  const desc=document.getElementById("desc").value;
+  const amount=+document.getElementById("amount").value;
+  const type=document.getElementById("type").value;
+
+  if(!date || !amount) return;
+
+  data.push({date,desc,amount,type});
+  document.getElementById("modal").classList.add("hidden");
+  document.querySelectorAll("input").forEach(i=>i.value="");
+  render();
+}
+
+function del(i){
+  data.splice(i,1);
+  render();
+}
+
+function exportExcel(){
+  let csv="Fecha,Descripción,Tipo,Monto\n";
+  data.forEach(m=>{
+    csv+=`${m.date},${m.desc},${m.type},${m.amount}\n`;
+  });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="gastos.csv";
+  a.click();
+}
+
+function backup(){
+  alert(JSON.stringify(data,null,2));
+}
+
+render();
+</script>
+
+</body>
+</html>
